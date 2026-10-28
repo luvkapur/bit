@@ -698,10 +698,15 @@ export class Workspace implements ComponentFactory {
     const flattenedDependencies = await versionObj.loadFlattenedDependencies(objects);
     const idByStr = new Map<string, ComponentID>([[component.id.toString(), component.id]]);
     flattenedDependencies.forEach((id) => idByStr.set(id.toString(), id));
+    // the saved edges have the component with the version it was saved with. when .bitmap has the snap of a tag,
+    // that is the tag (as in getSavedGraphOfComponentIfExist).
+    const tag = isHash(component.id.version) ? component.tags.byHash(component.id.version)?.version.raw : undefined;
+    const savedIdStr = tag ? component.id.changeVersion(tag).toString() : undefined;
     const loadEdges = async (): Promise<SavedGraphEdge[]> => {
       const flattenedEdges = await versionObj.getFlattenedEdges(objects);
       const toNodeId = (id: ComponentID): string => {
         const idStr = id.toString();
+        if (idStr === savedIdStr) return component.id.toString();
         if (!idByStr.has(idStr)) {
           const suggestWrongSnap = isHash(component.id.version)
             ? `\nplease check that .bitmap has the correct versions of ${component.id.toStringWithoutVersion()}.
